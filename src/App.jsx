@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import YearsView from './views/YearsView';
 import PupilsView from './views/PupilsView';
+import EnrollmentsView from './views/EnrollmentsView';
 
 const VIEWS = [
   { id: 'years', label: 'Anos Letivos' },
   { id: 'pupils', label: 'Alunos' },
+  { id: 'enrollments', label: 'Inscrições' },
 ];
 
 export default function App() {
@@ -32,6 +34,7 @@ export default function App() {
 
       {view === 'years' && <YearsView />}
       {view === 'pupils' && <PupilsView />}
+      {view === 'enrollments' && <EnrollmentsView />}
     </div>
   );
 }
