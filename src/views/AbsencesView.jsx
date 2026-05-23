@@ -119,13 +119,13 @@ export default function AbsencesView() {
   }, [absenceDates, selectedYear]);
 
   return (
-    <div className='max-w-4xl mx-auto p-6'>
+    <div className='max-w-4xl mx-auto p-3 sm:p-6'>
       <h1 className='text-2xl font-semibold text-gray-800 mb-6'>Faltas</h1>
 
       {years.length === 0 ? (
         <p className='text-sm text-gray-400'>Ainda não há anos letivos criados.</p>
       ) : (
-        <div className='grid grid-cols-[200px_1fr] gap-6 items-start'>
+        <div className='grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-start'>
 
           {/* Left panel */}
           <div className='space-y-4'>
@@ -224,7 +224,7 @@ export default function AbsencesView() {
               </div>
 
               {/* Day cells */}
-              <div className='grid grid-cols-7 p-2 gap-1'>
+              <div className='grid grid-cols-7 p-2 gap-0.5 sm:gap-1'>
                 {cells.map((cell, i) => {
                   if (!cell) return <div key={i} />;
                   const inactive = cell.isWeekend || closedDates.has(cell.dateStr);

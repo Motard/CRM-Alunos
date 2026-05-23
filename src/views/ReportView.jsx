@@ -31,7 +31,7 @@ function MasterView({ year, pupils, onSelectPupil }) {
             Nenhum aluno inscrito neste ano.
           </p>
         ) : (
-          <table className='w-full text-sm'>
+          <div className='overflow-x-auto'><table className='w-full text-sm'>
             <thead>
               <tr className='border-b border-gray-100 text-xs text-gray-400'>
                 <th className='text-left px-5 py-2 font-medium'>Aluno</th>
@@ -70,7 +70,7 @@ function MasterView({ year, pupils, onSelectPupil }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>
@@ -177,7 +177,7 @@ export default function ReportView() {
   }, [selectedYear]);
 
   return (
-    <div className='max-w-4xl mx-auto p-6'>
+    <div className='max-w-4xl mx-auto p-3 sm:p-6'>
       <h1 className='text-2xl font-semibold text-gray-800 mb-6'>
         Relatório de Faltas
       </h1>
@@ -187,7 +187,7 @@ export default function ReportView() {
           Ainda não há anos letivos criados.
         </p>
       ) : (
-        <div className='grid grid-cols-[200px_1fr] gap-6 items-start'>
+        <div className='grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-start'>
           {/* Year selector */}
           <div className='bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden'>
             <div className='px-4 py-3 border-b border-gray-100'>

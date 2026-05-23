@@ -133,7 +133,7 @@ export default function PupilsView() {
       {/* Add form */}
       <div className='bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm'>
         <h2 className='text-base font-medium text-gray-700 mb-4'>Adicionar Aluno</h2>
-        <form onSubmit={handleAdd} className='flex gap-2'>
+        <form onSubmit={handleAdd} className='flex flex-col sm:flex-row gap-2'>
           <input
             type='text'
             value={newName}

@@ -145,7 +145,7 @@ export default function YearsView() {
             )}
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <div>
               <label className='block text-sm text-gray-600 mb-1'>Fim do 1.º Período</label>
               <input
@@ -207,9 +207,8 @@ export default function YearsView() {
                 <span className='text-lg font-semibold text-gray-800'>
                   {schoolYearLabel(year.start_year)}
                 </span>
-                <div className='text-xs text-gray-400 mt-0.5 space-x-3'>
+                <div className='text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5'>
                   <span>1.º P termina a {year.p1_end}</span>
-                  <span>·</span>
                   <span>2.º P termina a {year.p2_end}</span>
                   {year.pupil_count > 0 && (
                     <>

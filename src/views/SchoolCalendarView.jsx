@@ -88,13 +88,13 @@ export default function SchoolCalendarView() {
   const openThisMonth = cells.filter((c) => c && !c.isWeekend && !closedDates.has(c.dateStr)).length;
 
   return (
-    <div className='max-w-4xl mx-auto p-6'>
+    <div className='max-w-4xl mx-auto p-3 sm:p-6'>
       <h1 className='text-2xl font-semibold text-gray-800 mb-6'>Calendário Escolar</h1>
 
       {years.length === 0 ? (
         <p className='text-sm text-gray-400'>Ainda não há anos letivos criados.</p>
       ) : (
-        <div className='grid grid-cols-[200px_1fr] gap-6 items-start'>
+        <div className='grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-start'>
 
           {/* Year selector */}
           <div className='bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden'>
@@ -154,7 +154,7 @@ export default function SchoolCalendarView() {
             </div>
 
             {/* Day cells */}
-            <div className='grid grid-cols-7 p-2 gap-1'>
+            <div className='grid grid-cols-7 p-2 gap-0.5 sm:gap-1'>
               {cells.map((cell, i) => {
                 if (!cell) return <div key={i} />;
                 const closed = closedDates.has(cell.dateStr);
