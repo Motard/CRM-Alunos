@@ -38,6 +38,7 @@ export default function AbsencesView() {
   const [pupils, setPupils] = useState([]);
   const [selectedPupil, setSelectedPupil] = useState(null);
   const [absenceDates, setAbsenceDates] = useState(new Set());
+  const [closedDates, setClosedDates] = useState(new Set());
   const [calMonth, setCalMonth] = useState({ year: 0, month: 9 });
   const [error, setError] = useState('');
 
@@ -57,9 +58,12 @@ export default function AbsencesView() {
     if (!selectedYear) return;
     setSelectedPupil(null);
     setAbsenceDates(new Set());
-    api.enrollments
-      .list(selectedYear.id)
-      .then(setPupils)
+    setClosedDates(new Set());
+    Promise.all([
+      api.enrollments.list(selectedYear.id),
+      api.closures.list(selectedYear.id),
+    ])
+      .then(([p, c]) => { setPupils(p); setClosedDates(new Set(c)); })
       .catch(() => setError('Erro ao carregar alunos'));
   }, [selectedYear]);
 
@@ -223,14 +227,15 @@ export default function AbsencesView() {
               <div className='grid grid-cols-7 p-2 gap-1'>
                 {cells.map((cell, i) => {
                   if (!cell) return <div key={i} />;
+                  const inactive = cell.isWeekend || closedDates.has(cell.dateStr);
                   const absent = absenceDates.has(cell.dateStr);
                   return (
                     <button
                       key={cell.dateStr}
-                      onClick={() => !cell.isWeekend && toggleAbsence(cell.dateStr)}
-                      disabled={cell.isWeekend}
+                      onClick={() => !inactive && toggleAbsence(cell.dateStr)}
+                      disabled={inactive}
                       className={`aspect-square flex items-center justify-center rounded-lg text-sm transition-colors ${
-                        cell.isWeekend
+                        inactive
                           ? 'text-gray-200 cursor-default'
                           : absent
                           ? 'bg-red-500 text-white font-medium cursor-pointer hover:bg-red-600'
