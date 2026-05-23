@@ -4,6 +4,7 @@ import PupilsView from './views/PupilsView';
 import EnrollmentsView from './views/EnrollmentsView';
 import AbsencesView from './views/AbsencesView';
 import SchoolCalendarView from './views/SchoolCalendarView';
+import ReportView from './views/ReportView';
 
 const VIEWS = [
   { id: 'years', label: 'Anos Letivos' },
@@ -11,6 +12,7 @@ const VIEWS = [
   { id: 'enrollments', label: 'Inscrições' },
   { id: 'calendar', label: 'Calendário' },
   { id: 'absences', label: 'Faltas' },
+  { id: 'report', label: 'Relatório de Faltas' },
 ];
 
 export default function App() {
@@ -41,6 +43,7 @@ export default function App() {
       {view === 'enrollments' && <EnrollmentsView />}
       {view === 'calendar' && <SchoolCalendarView />}
       {view === 'absences' && <AbsencesView />}
+      {view === 'report' && <ReportView />}
     </div>
   );
 }
