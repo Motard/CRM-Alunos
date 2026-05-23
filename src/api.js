@@ -23,6 +23,7 @@ export const api = {
     list: (all = false) => request('GET', `/api/pupils${all ? '?all=1' : ''}`),
     create: (data) => request('POST', '/api/pupils', data),
     update: (id, data) => request('PUT', `/api/pupils/${id}`, data),
+    delete: (id) => request('DELETE', `/api/pupils/${id}`),
   },
   enrollments: {
     list: (yearId) => request('GET', `/api/years/${yearId}/pupils`),
