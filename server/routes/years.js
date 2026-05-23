@@ -4,7 +4,13 @@ const db = require('../db');
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  const years = db.prepare('SELECT * FROM year_lists ORDER BY start_year DESC').all();
+  const years = db.prepare(`
+    SELECT y.*, COUNT(e.id) AS pupil_count
+    FROM year_lists y
+    LEFT JOIN enrollments e ON e.year_list_id = y.id
+    GROUP BY y.id
+    ORDER BY y.start_year DESC
+  `).all();
   res.json(years);
 });
 
@@ -37,6 +43,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
+  const { count } = db.prepare('SELECT COUNT(*) AS count FROM enrollments WHERE year_list_id = ?').get(req.params.id);
+  if (count > 0) return res.status(409).json({ error: 'Year has enrolled pupils and cannot be deleted' });
   const result = db.prepare('DELETE FROM year_lists WHERE id = ?').run(req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Year not found' });
   res.status(204).end();
