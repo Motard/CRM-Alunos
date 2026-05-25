@@ -37,6 +37,13 @@ const schema = [
     date         TEXT NOT NULL,
     UNIQUE(year_list_id, date)
   )`,
+  `CREATE TABLE IF NOT EXISTS day_notes (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    year_list_id INTEGER NOT NULL REFERENCES year_lists(id),
+    date         TEXT NOT NULL,
+    note         TEXT NOT NULL,
+    UNIQUE(year_list_id, date)
+  )`,
 ];
 
 for (const statement of schema) {

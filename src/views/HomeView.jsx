@@ -1,4 +1,4 @@
-import { CalendarDays, Users, ClipboardList, CalendarCheck, AlertCircle, BarChart2 } from 'lucide-react';
+import { CalendarDays, Users, ClipboardList, CalendarCheck, AlertCircle, BarChart2, StickyNote } from 'lucide-react';
 
 const TILES = [
   {
@@ -28,6 +28,13 @@ const TILES = [
     description: 'Marcar dias sem escola (feriados, greves).',
     icon: CalendarCheck,
     color: 'bg-orange-50 text-orange-600',
+  },
+  {
+    id: 'calendar-notes',
+    label: 'Notas do Calendário',
+    description: 'Consultar as notas adicionadas aos dias do calendário.',
+    icon: StickyNote,
+    color: 'bg-yellow-50 text-yellow-600',
   },
   {
     id: 'absences',
