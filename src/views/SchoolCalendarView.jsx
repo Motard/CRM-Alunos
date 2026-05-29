@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { ChevronLeft, ChevronRight, X, Plus } from 'lucide-react';
 import { api } from '../api';
 
 function schoolYearLabel(startYear) {
@@ -26,12 +26,82 @@ function buildCalendar(year, month) {
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const WEEKDAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
+function NoteModal({ cell, note, onClose, onSave }) {
+  const [text, setText] = useState(note);
+  const [saving, setSaving] = useState(false);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    await onSave(text.trim());
+    setSaving(false);
+    onClose();
+  }
+
+  const dateLabel = (() => {
+    const [y, m, d] = cell.dateStr.split('-');
+    return `${parseInt(d)} de ${MONTHS[parseInt(m) - 1]} de ${y}`;
+  })();
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30' onClick={onClose}>
+      <div
+        className='bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden'
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex items-center justify-between px-5 py-4 border-b border-gray-100'>
+          <div>
+            <p className='text-xs text-gray-400 uppercase tracking-wide'>Nota do dia</p>
+            <h3 className='text-sm font-semibold text-gray-800 mt-0.5'>{dateLabel}</h3>
+          </div>
+          <button onClick={onClose} className='p-1.5 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer'>
+            <X size={16} className='text-gray-400' />
+          </button>
+        </div>
+
+        <div className='px-5 py-4'>
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={4}
+            placeholder='Escreva uma nota para este dia…'
+            className='w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700 placeholder-gray-300'
+          />
+        </div>
+
+        <div className='px-5 py-3 border-t border-gray-100 flex justify-end gap-2'>
+          <button
+            onClick={onClose}
+            className='px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer'
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className='px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50'
+          >
+            {saving ? 'A guardar…' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SchoolCalendarView() {
   const [years, setYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState(null);
   const [closedDates, setClosedDates] = useState(new Set());
+  const [notes, setNotes] = useState({});
   const [calMonth, setCalMonth] = useState({ year: 0, month: 9 });
   const [error, setError] = useState('');
+  const [activeCell, setActiveCell] = useState(null);
 
   useEffect(() => {
     api.years.list()
@@ -48,9 +118,17 @@ export default function SchoolCalendarView() {
   useEffect(() => {
     if (!selectedYear) return;
     setClosedDates(new Set());
-    api.closures
-      .list(selectedYear.id)
-      .then((dates) => setClosedDates(new Set(dates)))
+    setNotes({});
+    Promise.all([
+      api.closures.list(selectedYear.id),
+      api.notes.list(selectedYear.id),
+    ])
+      .then(([dates, noteRows]) => {
+        setClosedDates(new Set(dates));
+        const map = {};
+        for (const row of noteRows) map[row.date] = row.note;
+        setNotes(map);
+      })
       .catch(() => setError('Erro ao carregar calendário'));
   }, [selectedYear]);
 
@@ -64,6 +142,21 @@ export default function SchoolCalendarView() {
       } else {
         await api.closures.remove(selectedYear.id, dateStr);
         setClosedDates((s) => { const n = new Set(s); n.delete(dateStr); return n; });
+      }
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function saveNote(dateStr, text) {
+    setError('');
+    try {
+      if (text) {
+        await api.notes.save(selectedYear.id, dateStr, text);
+        setNotes((n) => ({ ...n, [dateStr]: text }));
+      } else if (notes[dateStr]) {
+        await api.notes.remove(selectedYear.id, dateStr);
+        setNotes((n) => { const m = { ...n }; delete m[dateStr]; return m; });
       }
     } catch (e) {
       setError(e.message);
@@ -158,22 +251,35 @@ export default function SchoolCalendarView() {
               {cells.map((cell, i) => {
                 if (!cell) return <div key={i} />;
                 const closed = closedDates.has(cell.dateStr);
+                const hasNote = !!notes[cell.dateStr];
                 return (
-                  <button
+                  <div
                     key={cell.dateStr}
-                    onClick={() => !cell.isWeekend && toggleDay(cell.dateStr)}
-                    disabled={cell.isWeekend}
-                    title={closed ? 'Escola encerrada — clique para reabrir' : cell.isWeekend ? '' : 'Escola aberta — clique para encerrar'}
-                    className={`aspect-square flex items-center justify-center rounded-lg text-sm transition-colors ${
+                    className={`aspect-square relative flex items-center justify-center rounded-lg text-sm transition-colors ${
                       cell.isWeekend
-                        ? 'text-gray-200 cursor-default'
+                        ? 'text-gray-200'
                         : closed
                         ? 'bg-gray-200 text-gray-400 cursor-pointer hover:bg-gray-300'
                         : 'bg-green-50 text-green-700 font-medium cursor-pointer hover:bg-green-100'
                     }`}
+                    onClick={() => !cell.isWeekend && toggleDay(cell.dateStr)}
                   >
                     {cell.day}
-                  </button>
+
+                    {!cell.isWeekend && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setActiveCell(cell); }}
+                        title='Adicionar nota'
+                        className='absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded transition-colors cursor-pointer text-gray-500 hover:text-blue-500'
+                      >
+                        <Plus size={13} strokeWidth={2.5} />
+                      </button>
+                    )}
+
+                    {hasNote && (
+                      <span className='absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-400' />
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -188,9 +294,22 @@ export default function SchoolCalendarView() {
                 <span className='w-3 h-3 rounded-sm bg-gray-200 inline-block' />
                 Encerrado: <span className='font-semibold text-gray-700'>{closedThisMonth}</span>
               </span>
+              <span className='text-xs text-gray-500 flex items-center gap-1.5'>
+                <span className='w-3 h-3 rounded-full bg-blue-400 inline-block' />
+                Com nota
+              </span>
             </div>
           </div>
         </div>
+      )}
+
+      {activeCell && (
+        <NoteModal
+          cell={activeCell}
+          note={notes[activeCell.dateStr] || ''}
+          onClose={() => setActiveCell(null)}
+          onSave={(text) => saveNote(activeCell.dateStr, text)}
+        />
       )}
     </div>
   );

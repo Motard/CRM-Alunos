@@ -6,6 +6,7 @@ const pupilsRouter = require('./routes/pupils');
 const enrollmentsRouter = require('./routes/enrollments');
 const absencesRouter = require('./routes/absences');
 const closuresRouter = require('./routes/closures');
+const notesRouter = require('./routes/notes');
 const reportRouter = require('./routes/report');
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/api/years/:yearId/pupils', enrollmentsRouter);
 app.use('/api/years/:yearId/pupils/:pupilId/absences', absencesRouter);
 app.use('/api/years/:yearId/absences', absencesRouter);
 app.use('/api/years/:yearId/closures', closuresRouter);
+app.use('/api/years/:yearId/notes', notesRouter);
 app.use('/api/years/:yearId/report', reportRouter);
 
 app.use((err, req, res, next) => {

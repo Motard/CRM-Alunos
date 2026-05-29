@@ -43,4 +43,9 @@ export const api = {
     add: (yearId, date) => request('POST', `/api/years/${yearId}/closures`, { date }),
     remove: (yearId, date) => request('DELETE', `/api/years/${yearId}/closures/${date}`),
   },
+  notes: {
+    list: (yearId) => request('GET', `/api/years/${yearId}/notes`),
+    save: (yearId, date, note) => request('PUT', `/api/years/${yearId}/notes/${date}`, { note }),
+    remove: (yearId, date) => request('DELETE', `/api/years/${yearId}/notes/${date}`),
+  },
 };
