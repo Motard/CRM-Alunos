@@ -29,6 +29,7 @@ const schema = [
     pupil_id     INTEGER NOT NULL REFERENCES pupils(id),
     year_list_id INTEGER NOT NULL REFERENCES year_lists(id),
     date         TEXT NOT NULL,
+    justified    INTEGER NOT NULL DEFAULT 0,
     UNIQUE(pupil_id, year_list_id, date)
   )`,
   `CREATE TABLE IF NOT EXISTS school_closures (
@@ -48,6 +49,13 @@ const schema = [
 
 for (const statement of schema) {
   db.prepare(statement).run();
+}
+
+// Migrations
+try {
+  db.prepare('ALTER TABLE absences ADD COLUMN justified INTEGER NOT NULL DEFAULT 0').run();
+} catch (_) {
+  // column already exists
 }
 
 module.exports = db;

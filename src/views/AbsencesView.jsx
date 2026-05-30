@@ -37,19 +37,17 @@ export default function AbsencesView() {
   const [selectedYear, setSelectedYear] = useState(null);
   const [pupils, setPupils] = useState([]);
   const [selectedPupil, setSelectedPupil] = useState(null);
-  const [absenceDates, setAbsenceDates] = useState(new Set());
+  const [absences, setAbsences] = useState(new Map()); // date → { id, justified }
   const [closedDates, setClosedDates] = useState(new Set());
-  const [calMonth, setCalMonth] = useState({ year: 0, month: 9 });
+  const now = new Date();
+  const [calMonth, setCalMonth] = useState({ year: now.getFullYear(), month: now.getMonth() + 1 });
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.years.list()
       .then((ys) => {
         setYears(ys);
-        if (ys.length > 0) {
-          setSelectedYear(ys[0]);
-          setCalMonth({ year: ys[0].start_year, month: 9 });
-        }
+        if (ys.length > 0) setSelectedYear(ys[0]);
       })
       .catch(() => setError('Erro ao carregar anos'));
   }, []);
@@ -57,7 +55,7 @@ export default function AbsencesView() {
   useEffect(() => {
     if (!selectedYear) return;
     setSelectedPupil(null);
-    setAbsenceDates(new Set());
+    setAbsences(new Map());
     setClosedDates(new Set());
     Promise.all([
       api.enrollments.list(selectedYear.id),
@@ -71,25 +69,33 @@ export default function AbsencesView() {
     if (!selectedPupil || !selectedYear) return;
     api.absences
       .list(selectedYear.id, selectedPupil.id)
-      .then((abs) => setAbsenceDates(new Set(abs.map((a) => a.date))))
+      .then((abs) => setAbsences(new Map(abs.map((a) => [a.date, { id: a.id, justified: !!a.justified }]))))
       .catch(() => setError('Erro ao carregar faltas'));
   }, [selectedPupil, selectedYear]);
 
   async function toggleAbsence(dateStr) {
     setError('');
-    const removing = absenceDates.has(dateStr);
+    const current = absences.get(dateStr);
     try {
-      if (removing) {
-        await api.absences.remove(selectedYear.id, selectedPupil.id, dateStr);
-        setAbsenceDates((s) => { const n = new Set(s); n.delete(dateStr); return n; });
+      if (!current) {
+        // 1st click: create as justified
+        const a = await api.absences.add(selectedYear.id, selectedPupil.id, dateStr, true);
+        setAbsences((m) => new Map(m).set(dateStr, { id: a.id, justified: true }));
+        setPupils((ps) => ps.map((p) =>
+          p.id !== selectedPupil.id ? p : { ...p, absence_count: (p.absence_count || 0) + 1 }
+        ));
+      } else if (current.justified) {
+        // 2nd click: mark as unjustified
+        await api.absences.justify(selectedYear.id, selectedPupil.id, dateStr, false);
+        setAbsences((m) => new Map(m).set(dateStr, { ...current, justified: false }));
       } else {
-        await api.absences.add(selectedYear.id, selectedPupil.id, dateStr);
-        setAbsenceDates((s) => new Set(s).add(dateStr));
+        // 3rd click: remove
+        await api.absences.remove(selectedYear.id, selectedPupil.id, dateStr);
+        setAbsences((m) => { const n = new Map(m); n.delete(dateStr); return n; });
+        setPupils((ps) => ps.map((p) =>
+          p.id !== selectedPupil.id ? p : { ...p, absence_count: (p.absence_count || 0) - 1 }
+        ));
       }
-      setPupils((ps) => ps.map((p) =>
-        p.id !== selectedPupil.id ? p :
-        { ...p, absence_count: (p.absence_count || 0) + (removing ? -1 : 1) }
-      ));
     } catch (e) {
       setError(e.message);
     }
@@ -112,11 +118,11 @@ export default function AbsencesView() {
   const periodCounts = useMemo(() => {
     if (!selectedYear) return { 1: 0, 2: 0, 3: 0 };
     const counts = { 1: 0, 2: 0, 3: 0 };
-    for (const date of absenceDates) {
+    for (const date of absences.keys()) {
       counts[getPeriod(date, selectedYear.p1_end, selectedYear.p2_end)]++;
     }
     return counts;
-  }, [absenceDates, selectedYear]);
+  }, [absences, selectedYear]);
 
   return (
     <div className='max-w-4xl mx-auto p-3 sm:p-6'>
@@ -137,7 +143,7 @@ export default function AbsencesView() {
                 {years.map((y) => (
                   <li key={y.id}>
                     <button
-                      onClick={() => { setSelectedYear(y); setCalMonth({ year: y.start_year, month: 9 }); setError(''); }}
+                      onClick={() => { setSelectedYear(y); setError(''); }}
                       className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${
                         selectedYear?.id === y.id
                           ? 'bg-blue-50 text-blue-700 font-medium'
@@ -228,7 +234,7 @@ export default function AbsencesView() {
                 {cells.map((cell, i) => {
                   if (!cell) return <div key={i} />;
                   const inactive = cell.isWeekend || closedDates.has(cell.dateStr);
-                  const absent = absenceDates.has(cell.dateStr);
+                  const absence = absences.get(cell.dateStr);
                   return (
                     <button
                       key={cell.dateStr}
@@ -237,7 +243,9 @@ export default function AbsencesView() {
                       className={`aspect-square flex items-center justify-center rounded-lg text-sm transition-colors ${
                         inactive
                           ? 'text-gray-200 cursor-default'
-                          : absent
+                          : absence?.justified
+                          ? 'bg-blue-500 text-white font-medium cursor-pointer hover:bg-blue-600'
+                          : absence
                           ? 'bg-red-500 text-white font-medium cursor-pointer hover:bg-red-600'
                           : 'text-gray-700 hover:bg-gray-100 cursor-pointer'
                       }`}
@@ -249,9 +257,15 @@ export default function AbsencesView() {
               </div>
 
               {/* Period summary */}
-              <div className='px-4 py-3 border-t border-gray-100 flex items-center gap-6'>
+              <div className='px-4 py-3 border-t border-gray-100 flex items-center gap-6 flex-wrap'>
                 <span className='text-xs text-gray-500'>
-                  Total: <span className='font-semibold text-gray-700'>{absenceDates.size}</span>
+                  Total: <span className='font-semibold text-gray-700'>{absences.size}</span>
+                </span>
+                <span className='text-xs text-gray-500'>
+                  Justificadas: <span className='font-semibold text-blue-600'>{[...absences.values()].filter(a => a.justified).length}</span>
+                </span>
+                <span className='text-xs text-gray-500'>
+                  Injustificadas: <span className='font-semibold text-red-500'>{[...absences.values()].filter(a => !a.justified).length}</span>
                 </span>
                 {[1, 2, 3].map((p) => (
                   <span key={p} className='text-xs text-gray-500'>
