@@ -32,8 +32,9 @@ export const api = {
   },
   absences: {
     list: (yearId, pupilId) => request('GET', `/api/years/${yearId}/pupils/${pupilId}/absences`),
-    add: (yearId, pupilId, date) => request('POST', `/api/years/${yearId}/pupils/${pupilId}/absences`, { date }),
+    add: (yearId, pupilId, date, justified) => request('POST', `/api/years/${yearId}/pupils/${pupilId}/absences`, { date, justified }),
     remove: (yearId, pupilId, date) => request('DELETE', `/api/years/${yearId}/pupils/${pupilId}/absences/${date}`),
+    justify: (yearId, pupilId, date, justified) => request('PATCH', `/api/years/${yearId}/pupils/${pupilId}/absences/${date}`, { justified }),
   },
   report: {
     year: (yearId) => request('GET', `/api/years/${yearId}/report`),

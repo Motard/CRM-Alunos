@@ -13,7 +13,9 @@ router.get('/', (req, res) => {
       SUM(CASE WHEN a.date <= ? THEN 1 ELSE 0 END) AS p1_count,
       SUM(CASE WHEN a.date > ? AND a.date <= ? THEN 1 ELSE 0 END) AS p2_count,
       SUM(CASE WHEN a.date > ? THEN 1 ELSE 0 END) AS p3_count,
-      COUNT(a.id) AS total
+      COUNT(a.id) AS total,
+      SUM(CASE WHEN a.justified = 1 THEN 1 ELSE 0 END) AS justified_count,
+      SUM(CASE WHEN a.justified = 0 AND a.id IS NOT NULL THEN 1 ELSE 0 END) AS unjustified_count
     FROM pupils p
     INNER JOIN enrollments e ON e.pupil_id = p.id AND e.year_list_id = ?
     LEFT JOIN absences a ON a.pupil_id = p.id AND a.year_list_id = ?

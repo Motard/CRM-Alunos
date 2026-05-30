@@ -50,7 +50,7 @@ router.get('/all', (req, res) => {
 
 // POST /api/years/:yearId/pupils/:pupilId/absences
 router.post('/', (req, res) => {
-  const { date } = req.body;
+  const { date, justified = false } = req.body;
   if (!date) return res.status(400).json({ error: 'date is required' });
 
   const year = db.prepare('SELECT * FROM year_lists WHERE id = ?').get(req.params.yearId);
@@ -58,14 +58,15 @@ router.post('/', (req, res) => {
 
   try {
     const result = db.prepare(
-      'INSERT INTO absences (pupil_id, year_list_id, date) VALUES (?, ?, ?)'
-    ).run(req.params.pupilId, req.params.yearId, date);
+      'INSERT INTO absences (pupil_id, year_list_id, date, justified) VALUES (?, ?, ?, ?)'
+    ).run(req.params.pupilId, req.params.yearId, date, justified ? 1 : 0);
 
     res.status(201).json({
       id: result.lastInsertRowid,
       pupil_id: Number(req.params.pupilId),
       year_list_id: Number(req.params.yearId),
       date,
+      justified: justified ? 1 : 0,
       period: getPeriod(date, year.p1_end, year.p2_end),
     });
   } catch (e) {
@@ -73,6 +74,19 @@ router.post('/', (req, res) => {
     if (e.message.includes('FOREIGN KEY')) return res.status(404).json({ error: 'Pupil or year not found' });
     throw e;
   }
+});
+
+// PATCH /api/years/:yearId/pupils/:pupilId/absences/:date
+router.patch('/:date', (req, res) => {
+  const { justified } = req.body;
+  if (justified === undefined) return res.status(400).json({ error: 'justified is required' });
+
+  const result = db.prepare(
+    'UPDATE absences SET justified = ? WHERE year_list_id = ? AND pupil_id = ? AND date = ?'
+  ).run(justified ? 1 : 0, req.params.yearId, req.params.pupilId, req.params.date);
+
+  if (result.changes === 0) return res.status(404).json({ error: 'Absence not found' });
+  res.json({ date: req.params.date, justified: justified ? 1 : 0 });
 });
 
 // DELETE /api/years/:yearId/pupils/:pupilId/absences/:date

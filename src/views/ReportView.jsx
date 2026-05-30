@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react';
 import { api } from '../api';
 
 function schoolYearLabel(startYear) {
@@ -11,8 +11,44 @@ function PeriodBadge({ count, period }) {
   return <span className='font-medium text-gray-700'>{count}</span>;
 }
 
+const COLUMNS = [
+  { key: 'name',     label: 'Aluno',  align: 'left'   },
+  { key: 'p1_count', label: '1.º P',  align: 'center' },
+  { key: 'p2_count', label: '2.º P',  align: 'center' },
+  { key: 'p3_count', label: '3.º P',  align: 'center' },
+  { key: 'total',    label: 'Total',  align: 'center' },
+];
+
 function MasterView({ year, pupils, onSelectPupil }) {
+  const [sortCol, setSortCol] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+
   const totalAbsences = pupils.reduce((s, p) => s + p.total, 0);
+
+  const sorted = useMemo(() => {
+    return [...pupils].sort((a, b) => {
+      const aVal = a[sortCol];
+      const bVal = b[sortCol];
+      const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : (aVal ?? 0) - (bVal ?? 0);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [pupils, sortCol, sortDir]);
+
+  function handleSort(key) {
+    if (sortCol === key) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortCol(key);
+      setSortDir('desc');
+    }
+  }
+
+  function SortIcon({ colKey }) {
+    if (sortCol !== colKey) return <ChevronUp size={12} className='opacity-20 ml-0.5 inline' />;
+    return sortDir === 'desc'
+      ? <ChevronDown size={12} className='ml-0.5 inline text-blue-500' />
+      : <ChevronUp size={12} className='ml-0.5 inline text-blue-500' />;
+  }
 
   return (
     <div>
@@ -34,15 +70,21 @@ function MasterView({ year, pupils, onSelectPupil }) {
           <div className='overflow-x-auto'><table className='w-full text-sm'>
             <thead>
               <tr className='border-b border-gray-100 text-xs text-gray-400'>
-                <th className='text-left px-5 py-2 font-medium'>Aluno</th>
-                <th className='text-center px-4 py-2 font-medium'>1.º P</th>
-                <th className='text-center px-4 py-2 font-medium'>2.º P</th>
-                <th className='text-center px-4 py-2 font-medium'>3.º P</th>
-                <th className='text-center px-4 py-2 font-medium'>Total</th>
+                {COLUMNS.map((col) => (
+                  <th
+                    key={col.key}
+                    onClick={() => handleSort(col.key)}
+                    className={`py-2 font-medium cursor-pointer select-none hover:text-gray-600 transition-colors ${
+                      col.align === 'left' ? 'text-left px-5' : 'text-center px-4'
+                    } ${sortCol === col.key ? 'text-gray-600' : ''}`}
+                  >
+                    {col.label}<SortIcon colKey={col.key} />
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className='divide-y divide-gray-50'>
-              {pupils.map((pupil) => (
+              {sorted.map((pupil) => (
                 <tr
                   key={pupil.id}
                   onClick={() => onSelectPupil(pupil)}
@@ -60,8 +102,15 @@ function MasterView({ year, pupils, onSelectPupil }) {
                   </td>
                   <td className='px-4 py-3 text-center'>
                     {pupil.total > 0 ? (
-                      <span className='font-semibold text-gray-800'>
-                        {pupil.total}
+                      <span className='font-semibold'>
+                        <span className='text-red-500'>{pupil.total}</span>
+                        {pupil.justified_count > 0 && (
+                          <>
+                            <span className='text-gray-400'>(</span>
+                            <span className='text-blue-500'>{pupil.justified_count}</span>
+                            <span className='text-gray-400'>)</span>
+                          </>
+                        )}
                       </span>
                     ) : (
                       <span className='text-gray-300'>—</span>
@@ -89,7 +138,7 @@ function DetailView({ year, pupil, onBack }) {
   }, [year.id, pupil.id]);
 
   const byPeriod = { 1: [], 2: [], 3: [] };
-  for (const a of absences) byPeriod[a.period].push(a.date);
+  for (const a of absences) byPeriod[a.period].push(a);
 
   return (
     <div>
@@ -109,9 +158,17 @@ function DetailView({ year, pupil, onBack }) {
               Ano letivo {schoolYearLabel(year.start_year)}
             </p>
           </div>
-          <span className='text-sm font-semibold text-gray-700'>
-            {absences.length} {absences.length === 1 ? 'falta' : 'faltas'}
-          </span>
+          <div className='text-right'>
+            <span className='text-sm font-semibold text-gray-700'>
+              {absences.length} {absences.length === 1 ? 'falta' : 'faltas'}
+            </span>
+            {absences.filter(a => a.justified).length > 0 && (
+              <p className='text-xs font-medium text-blue-500 mt-0.5'>
+                {absences.filter(a => a.justified).length}{' '}
+                {absences.filter(a => a.justified).length === 1 ? 'justificada' : 'justificadas'}
+              </p>
+            )}
+          </div>
         </div>
 
         {error && <p className='text-sm text-red-500 px-5 py-3'>{error}</p>}
@@ -126,17 +183,30 @@ function DetailView({ year, pupil, onBack }) {
               (p) =>
                 byPeriod[p].length > 0 && (
                   <div key={p} className='px-5 py-4'>
-                    <h3 className='text-xs font-medium text-gray-400 uppercase tracking-wide mb-3'>
-                      {p}.º Período — {byPeriod[p].length}{' '}
-                      {byPeriod[p].length === 1 ? 'falta' : 'faltas'}
+                    <h3 className='text-xs font-medium uppercase tracking-wide mb-3'>
+                      <span className='text-gray-400'>
+                        {p}.º Período — {byPeriod[p].length}{' '}
+                        {byPeriod[p].length === 1 ? 'falta' : 'faltas'}
+                      </span>
+                      {byPeriod[p].filter(a => a.justified).length > 0 && (
+                        <span className='text-blue-500'>
+                          {' · '}
+                          {byPeriod[p].filter(a => a.justified).length}{' '}
+                          {byPeriod[p].filter(a => a.justified).length === 1 ? 'falta justificada' : 'faltas justificadas'}
+                        </span>
+                      )}
                     </h3>
                     <div className='flex flex-wrap gap-2'>
-                      {byPeriod[p].map((date) => (
+                      {byPeriod[p].map((a) => (
                         <span
-                          key={date}
-                          className='text-sm bg-red-50 text-red-700 border border-red-100 rounded-lg px-3 py-1'
+                          key={a.date}
+                          className={`text-sm rounded-lg px-3 py-1 border ${
+                            a.justified
+                              ? 'bg-blue-50 text-blue-700 border-blue-100'
+                              : 'bg-red-50 text-red-700 border-red-100'
+                          }`}
                         >
-                          {date}
+                          {a.date}
                         </span>
                       ))}
                     </div>
