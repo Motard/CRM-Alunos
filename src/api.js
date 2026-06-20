@@ -8,6 +8,11 @@ async function request(method, path, body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401) {
+    sessionStorage.removeItem('token');
+    window.location.reload();
+    throw new Error('unauthorized');
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || res.statusText);

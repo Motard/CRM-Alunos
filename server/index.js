@@ -18,12 +18,19 @@ app.use(cors());
 app.use(express.json());
 
 // --- Sessions ---
-const sessions = new Set();
+const SESSION_TTL_MS = 60 * 60 * 1000; // 1 hour
+const sessions = new Map(); // token -> expiresAt
 
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'unauthorized' });
-  if (!sessions.has(auth.slice(7))) return res.status(401).json({ error: 'unauthorized' });
+  const token = auth.slice(7);
+  const expiresAt = sessions.get(token);
+  if (!expiresAt) return res.status(401).json({ error: 'unauthorized' });
+  if (Date.now() > expiresAt) {
+    sessions.delete(token);
+    return res.status(401).json({ error: 'session_expired' });
+  }
   next();
 }
 
@@ -77,7 +84,7 @@ app.post('/api/login', (req, res) => {
 
   if (codeOk) {
     const token = crypto.randomBytes(32).toString('hex');
-    sessions.add(token);
+    sessions.set(token, Date.now() + SESSION_TTL_MS);
     logAttempt(ip, true, 'ok');
     return res.json({ token });
   }
