@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Menu, X, House } from 'lucide-react';
+import LoginView from './views/LoginView';
 import HomeView from './views/HomeView';
 import YearsView from './views/YearsView';
 import PupilsView from './views/PupilsView';
@@ -20,8 +21,19 @@ const VIEWS = [
 ];
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!sessionStorage.getItem('token')
+  );
   const [view, setView] = useState('home');
   const [menuOpen, setMenuOpen] = useState(false);
+
+  if (!isAuthenticated) {
+    return (
+      <LoginView
+        onSuccess={() => setIsAuthenticated(true)}
+      />
+    );
+  }
 
   function navigate(id) {
     setView(id);
