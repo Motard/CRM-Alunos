@@ -1,6 +1,8 @@
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 async function request(method, path, body) {
   const token = sessionStorage.getItem('token');
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
