@@ -9,6 +9,8 @@ function getLockedUntil() {
   } catch { return 0; }
 }
 
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
+
 export default function LoginView({ onSuccess }) {
   const inputRef = useRef('');
   const onSuccessRef = useRef(onSuccess);
@@ -26,7 +28,7 @@ export default function LoginView({ onSuccess }) {
       inputRef.current = '';
 
       try {
-        const res = await fetch('/api/login', {
+        const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),
