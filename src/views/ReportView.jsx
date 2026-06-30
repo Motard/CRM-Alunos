@@ -103,11 +103,11 @@ function MasterView({ year, pupils, onSelectPupil }) {
                   <td className='px-4 py-3 text-center'>
                     {pupil.total > 0 ? (
                       <span className='font-semibold'>
-                        <span className='text-red-500'>{pupil.total}</span>
-                        {pupil.justified_count > 0 && (
+                        <span className='text-blue-500'>{pupil.total}</span>
+                        {(pupil.total - pupil.justified_count) > 0 && (
                           <>
                             <span className='text-gray-400'>(</span>
-                            <span className='text-blue-500'>{pupil.justified_count}</span>
+                            <span className='text-red-500'>{pupil.total - pupil.justified_count}</span>
                             <span className='text-gray-400'>)</span>
                           </>
                         )}
