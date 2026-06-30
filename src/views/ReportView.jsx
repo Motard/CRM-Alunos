@@ -162,10 +162,10 @@ function DetailView({ year, pupil, onBack }) {
             <span className='text-sm font-semibold text-gray-700'>
               {absences.length} {absences.length === 1 ? 'falta' : 'faltas'}
             </span>
-            {absences.filter(a => a.justified).length > 0 && (
-              <p className='text-xs font-medium text-blue-500 mt-0.5'>
-                {absences.filter(a => a.justified).length}{' '}
-                {absences.filter(a => a.justified).length === 1 ? 'justificada' : 'justificadas'}
+            {absences.filter(a => !a.justified).length > 0 && (
+              <p className='text-xs font-medium text-red-500 mt-0.5'>
+                {absences.filter(a => !a.justified).length}{' '}
+                {absences.filter(a => !a.justified).length === 1 ? 'injustificada' : 'injustificadas'}
               </p>
             )}
           </div>
@@ -188,11 +188,11 @@ function DetailView({ year, pupil, onBack }) {
                         {p}.º Período — {byPeriod[p].length}{' '}
                         {byPeriod[p].length === 1 ? 'falta' : 'faltas'}
                       </span>
-                      {byPeriod[p].filter(a => a.justified).length > 0 && (
-                        <span className='text-blue-500'>
+                      {byPeriod[p].filter(a => !a.justified).length > 0 && (
+                        <span className='text-red-500'>
                           {' · '}
-                          {byPeriod[p].filter(a => a.justified).length}{' '}
-                          {byPeriod[p].filter(a => a.justified).length === 1 ? 'falta justificada' : 'faltas justificadas'}
+                          {byPeriod[p].filter(a => !a.justified).length}{' '}
+                          {byPeriod[p].filter(a => !a.justified).length === 1 ? 'falta injustificada' : 'faltas injustificadas'}
                         </span>
                       )}
                     </h3>
