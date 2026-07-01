@@ -104,12 +104,18 @@ export default function SchoolCalendarView() {
   const [activeCell, setActiveCell] = useState(null);
 
   useEffect(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentStartYear = currentMonth >= 9 ? currentYear : currentYear - 1;
+
     api.years.list()
       .then((ys) => {
         setYears(ys);
         if (ys.length > 0) {
-          setSelectedYear(ys[0]);
-          setCalMonth({ year: ys[0].start_year, month: 9 });
+          const currentSchoolYear = ys.find((y) => y.start_year === currentStartYear) ?? ys[0];
+          setSelectedYear(currentSchoolYear);
+          setCalMonth({ year: currentYear, month: currentMonth });
         }
       })
       .catch(() => setError('Erro ao carregar anos'));
