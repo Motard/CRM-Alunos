@@ -24,6 +24,9 @@ function MasterView({ year, pupils, onSelectPupil }) {
   const [sortDir, setSortDir] = useState('asc');
 
   const totalAbsences = pupils.reduce((s, p) => s + p.total, 0);
+  const totalP1 = pupils.reduce((s, p) => s + (p.p1_count ?? 0), 0);
+  const totalP2 = pupils.reduce((s, p) => s + (p.p2_count ?? 0), 0);
+  const totalP3 = pupils.reduce((s, p) => s + (p.p3_count ?? 0), 0);
 
   const sorted = useMemo(() => {
     return [...pupils].sort((a, b) => {
@@ -119,6 +122,15 @@ function MasterView({ year, pupils, onSelectPupil }) {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className='border-t-2 border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500'>
+                <td className='px-5 py-2 text-left uppercase tracking-wide'>Total</td>
+                <td className='px-4 py-2 text-center text-gray-700'>{totalP1 || '—'}</td>
+                <td className='px-4 py-2 text-center text-gray-700'>{totalP2 || '—'}</td>
+                <td className='px-4 py-2 text-center text-gray-700'>{totalP3 || '—'}</td>
+                <td className='px-4 py-2 text-center text-blue-600'>{totalAbsences || '—'}</td>
+              </tr>
+            </tfoot>
           </table></div>
         )}
       </div>
