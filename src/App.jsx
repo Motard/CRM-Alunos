@@ -14,9 +14,9 @@ const VIEWS = [
   { id: 'years', label: 'Anos Letivos' },
   { id: 'pupils', label: 'Alunos' },
   { id: 'enrollments', label: 'Inscrições' },
-  { id: 'calendar', label: 'Calendário' },
+  { id: 'calendar', label: 'Calendário Escolar' },
   { id: 'calendar-notes', label: 'Notas do Calendário' },
-  { id: 'absences', label: 'Faltas' },
+  { id: 'absences', label: 'Marcar Faltas' },
   { id: 'report', label: 'Relatório de Faltas' },
 ];
 
@@ -28,11 +28,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (!isAuthenticated) {
-    return (
-      <LoginView
-        onSuccess={() => setIsAuthenticated(true)}
-      />
-    );
+    return <LoginView onSuccess={() => setIsAuthenticated(true)} />;
   }
 
   function navigate(id) {
@@ -40,7 +36,8 @@ export default function App() {
     setMenuOpen(false);
   }
 
-  const currentLabel = view === 'home' ? 'Início' : VIEWS.find((v) => v.id === view)?.label;
+  const currentLabel =
+    view === 'home' ? 'Início' : VIEWS.find((v) => v.id === view)?.label;
 
   return (
     <div className='min-h-screen bg-gray-50'>
@@ -67,7 +64,9 @@ export default function App() {
             <button
               onClick={() => navigate('home')}
               className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${
-                view === 'home' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                view === 'home'
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               Início
@@ -77,7 +76,9 @@ export default function App() {
                 key={v.id}
                 onClick={() => navigate(v.id)}
                 className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${
-                  view === v.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                  view === v.id
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 {v.label}
@@ -93,7 +94,9 @@ export default function App() {
               onClick={() => navigate('home')}
               title='Início'
               className={`p-2 rounded-lg transition-colors cursor-pointer ${
-                view === 'home' ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-100'
+                view === 'home'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-400 hover:bg-gray-100'
               }`}
             >
               <House size={16} />
